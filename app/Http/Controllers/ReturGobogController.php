@@ -41,22 +41,40 @@ class ReturGobogController extends Controller
             ]);
         }
 
+        // Koin berstatus 'tersedia' = sudah ada di admin, tidak perlu diretur lagi.
+        if ($gobog->status === 'tersedia') {
+            return response()->json([
+                'valid' => false,
+                'message' => 'RETUR DITOLAK: Koin ini sudah berada di admin (belum didistribusikan atau sudah diretur sebelumnya).',
+            ]);
+        }
+
         return response()->json([
             'valid' => true,
             'gobog_id' => $gobog->id,
             'nilai' => $gobog->nilai,
             'status' => $gobog->status,
             'kode_unik' => $gobog->kode_unik,
-            'message' => 'GOBOG ASLI',
+            'message' => 'GOBOG ASLI — Koin valid, siap diretur.',
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'gobogs_id' => ['required'],
+            'gobogs_id' => ['required', 'exists:gobogs,id'],
             'valid_status' => ['required', 'in:0,1'],
         ]);
+
+        // Double-check status sebelum proses retur (antisipasi race condition)
+        if ($request->valid_status == 1) {
+            $gobog = Gobog::findOrFail($request->gobogs_id);
+
+            if ($gobog->status === 'tersedia') {
+                return redirect()->route('admin.retur.index')
+                    ->with('error', 'Retur gagal: Koin ini sudah berada di admin, tidak perlu diretur lagi.');
+            }
+        }
 
         ReturnGobog::create([
             'users_id' => auth()->id(),
