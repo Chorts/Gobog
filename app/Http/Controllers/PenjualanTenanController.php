@@ -41,21 +41,40 @@ class PenjualanTenanController extends Controller
             ]);
         }
 
+        // Koin berstatus 'tersedia' = sudah dikembalikan ke admin / belum didistribusi.
+        // Tidak boleh diterima sebagai pembayaran.
+        if ($gobog->status === 'tersedia') {
+            return response()->json([
+                'valid' => false,
+                'message' => 'GOBOG TIDAK VALID: Koin ini belum didistribusikan atau sudah dikembalikan ke admin.',
+            ]);
+        }
+
         return response()->json([
             'valid' => true,
             'gobog_id' => $gobog->id,
             'nilai' => $gobog->nilai,
             'status' => $gobog->status,
-            'message' => 'GOBOG ASLI',
+            'message' => 'GOBOG ASLI — Koin valid, siap diterima.',
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'gobogs_id' => ['required'],
+            'gobogs_id' => ['required', 'exists:gobogs,id'],
             'valid_status' => ['required', 'in:0,1'],
         ]);
+
+        // Double-check status koin saat konfirmasi (antisipasi race condition)
+        if ($request->valid_status == 1) {
+            $gobog = Gobog::findOrFail($request->gobogs_id);
+
+            if ($gobog->status === 'tersedia') {
+                return redirect()->route('penjual.scan.index')
+                    ->with('error', 'Transaksi gagal: Koin sudah dikembalikan ke admin dan tidak bisa diterima.');
+            }
+        }
 
         PenjualanTenan::create([
             'users_id' => auth()->id(),
