@@ -1,15 +1,34 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Scan Koin Gobog')
 @section('content')
-<h1>Cek Keaslian Koin Gobog</h1>
-<p>Scan QR Code koin yang dibawa pengunjung untuk memverifikasi keasliannya sebelum menerima pembayaran.</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="bi bi-qr-code-scan me-2 text-primary"></i>Cek Keaslian Koin Gobog</h2>
+</div>
+<div class="alert alert-secondary d-flex align-items-center mb-4">
+    <i class="bi bi-shield-check me-2 flex-shrink-0"></i>
+    <span>Scan QR Code koin pengunjung untuk memverifikasi keasliannya sebelum menerima pembayaran.</span>
+</div>
 
-<button id="startBtn" onclick="startScan()">&#128247; Mulai Scan Koin</button>
-<button id="stopBtn" onclick="stopScan()" style="display:none">Stop Scan</button>
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 text-center">
+                <div id="reader" class="mx-auto mb-3" style="width:100%;max-width:350px"></div>
+                <div class="d-flex gap-2 justify-content-center mb-3">
+                    <button id="startBtn" class="btn btn-primary" onclick="startScan()">
+                        <i class="bi bi-camera me-2"></i>Mulai Scan Koin
+                    </button>
+                    <button id="stopBtn" class="btn btn-outline-secondary d-none" onclick="stopScan()">
+                        <i class="bi bi-stop-circle me-1"></i>Stop
+                    </button>
+                </div>
+                <div id="hasil"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<div id="reader" style="width:350px;margin-top:15px"></div>
-<div id="hasil" style="margin-top:15px"></div>
-
+@push('scripts')
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let qr = null, scanned = false;
@@ -17,8 +36,8 @@ let qr = null, scanned = false;
 function startScan() {
     scanned = false;
     document.getElementById('hasil').innerHTML = '';
-    document.getElementById('startBtn').style.display = 'none';
-    document.getElementById('stopBtn').style.display = 'inline';
+    document.getElementById('startBtn').classList.add('d-none');
+    document.getElementById('stopBtn').classList.remove('d-none');
     qr = new Html5Qrcode('reader');
     qr.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},onScan,null)
       .catch(e=>{ alert('Gagal akses kamera: '+e); stopScan(); });
@@ -26,8 +45,8 @@ function startScan() {
 
 function stopScan() {
     if(qr) qr.stop().then(()=>{ qr.clear(); qr=null; });
-    document.getElementById('startBtn').style.display = 'inline';
-    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('startBtn').classList.remove('d-none');
+    document.getElementById('stopBtn').classList.add('d-none');
 }
 
 function onScan(text) {
@@ -39,30 +58,31 @@ function onScan(text) {
         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
         body:JSON.stringify({qr_data:text})
     }).then(r=>r.json()).then(tampilkan).catch(()=>{
-        document.getElementById('hasil').innerHTML='<p style="color:red">Gagal menghubungi server.</p>';
+        document.getElementById('hasil').innerHTML='<div class="alert alert-danger">Gagal menghubungi server.</div>';
     });
 }
 
 function tampilkan(d) {
     let h = '';
     if(d.valid) {
-        h += '<p style="color:green"><strong>&#9989; '+d.message+'</strong></p>';
-        h += '<p>Nilai: Rp '+Number(d.nilai).toLocaleString('id-ID')+'</p>';
-        h += '<p>Status koin: '+d.status+'</p>';
-        h += '<form method="POST" action="{{ route("penjual.scan.store") }}">';
+        h += '<div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i><strong>'+d.message+'</strong></div>';
+        h += '<p class="mb-1"><strong>Nilai:</strong> Rp '+Number(d.nilai).toLocaleString('id-ID')+'</p>';
+        h += '<form method="POST" action="{{ route(\'penjual.scan.store\') }}">';
         h += '<input type="hidden" name="_token" value="{{ csrf_token() }}">';
         h += '<input type="hidden" name="gobogs_id" value="'+d.gobog_id+'">';
         h += '<input type="hidden" name="valid_status" value="1">';
-        h += '<button type="submit">&#9989; Terima Pembayaran</button></form>';
+        h += '<button type="submit" class="btn btn-success w-100 mt-2"><i class="bi bi-check2-circle me-2"></i>Terima Pembayaran</button></form>';
     } else {
-        h += '<p style="color:red"><strong>&#10060; '+d.message+'</strong></p>';
-        h += '<form method="POST" action="{{ route("penjual.scan.store") }}">';
+        h += '<div class="alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i><strong>'+d.message+'</strong></div>';
+        h += '<form method="POST" action="{{ route(\'penjual.scan.store\') }}">';
         h += '<input type="hidden" name="_token" value="{{ csrf_token() }}">';
         h += '<input type="hidden" name="gobogs_id" value="0">';
         h += '<input type="hidden" name="valid_status" value="0">';
-        h += '<button type="submit">&#10060; Tolak Transaksi (catat palsu)</button></form>';
+        h += '<button type="submit" class="btn btn-outline-danger w-100 mt-2"><i class="bi bi-x-circle me-2"></i>Tolak &amp; Catat Palsu</button></form>';
     }
+    h += '<button class="btn btn-outline-secondary w-100 mt-2" onclick="startScan()"><i class="bi bi-arrow-clockwise me-1"></i>Scan Lagi</button>';
     document.getElementById('hasil').innerHTML = h;
 }
 </script>
+@endpush
 @endsection
