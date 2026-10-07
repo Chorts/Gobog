@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\HargaHistory;
+use App\Models\Setting;
 use App\Models\Tenan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -11,12 +13,21 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Seed tenans FIRST — users.tenans_idtenans FK requires tenans to exist
+        // Default setting: harga universal gobog
+        Setting::set('harga_gobog', '5000');
+
+        // Log harga awal ke histori
+        HargaHistory::create([
+            'harga' => 5000,
+            'keterangan' => 'Harga awal sistem',
+        ]);
+
+        // Seed tenans FIRST (users FK depends on tenans)
         $tenan1 = Tenan::create(['nama' => 'Warung Makan Bu Sari']);
         $tenan2 = Tenan::create(['nama' => 'Toko Oleh-oleh Pak Budi']);
         $tenan3 = Tenan::create(['nama' => 'Kedai Minuman Segar']);
 
-        // Admin account — no tenan
+        // Admin (no tenan)
         User::create([
             'nama' => 'Administrator',
             'username' => 'admin',

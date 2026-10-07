@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Gobog;
 use App\Models\PenjualanAdmin;
 use App\Models\PenjualanTenan;
 use App\Models\ReturnGobog;
+use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -17,10 +19,17 @@ class LaporanController extends Controller
     {
         [$penjualanAdmins, $penjualanTenans, $returnGobogs] = $this->queryData($request);
 
+        $gobogBeredar = Gobog::where('status', 'tidak tersedia')->get();
+        $totalBeredar = $gobogBeredar->sum('nilai');
+        $harga = Setting::get('harga_gobog', 0);
+
         return view('admin.laporan.index', compact(
             'penjualanAdmins',
             'penjualanTenans',
             'returnGobogs',
+            'gobogBeredar',
+            'totalBeredar',
+            'harga',
         ));
     }
 
@@ -28,10 +37,15 @@ class LaporanController extends Controller
     {
         [$penjualanAdmins, $penjualanTenans, $returnGobogs] = $this->queryData($request);
 
+        $gobogBeredar = Gobog::where('status', 'tidak tersedia')->get();
+        $totalBeredar = $gobogBeredar->sum('nilai');
+
         $pdf = Pdf::loadView('admin.laporan.pdf', compact(
             'penjualanAdmins',
             'penjualanTenans',
             'returnGobogs',
+            'gobogBeredar',
+            'totalBeredar',
         ));
 
         return $pdf->download('laporan-gobog-'.now()->format('Ymd').'.pdf');

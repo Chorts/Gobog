@@ -16,7 +16,7 @@ class ReturGobogController extends Controller
 
     public function index(): View
     {
-        return view('admin.retur.index');
+        return view('admin.rekap-pengembalian.index');
     }
 
     public function scan(Request $request): JsonResponse
@@ -41,7 +41,6 @@ class ReturGobogController extends Controller
             ]);
         }
 
-        // Koin berstatus 'tersedia' = sudah ada di admin, tidak perlu diretur lagi.
         if ($gobog->status === 'tersedia') {
             return response()->json([
                 'valid' => false,
@@ -66,12 +65,11 @@ class ReturGobogController extends Controller
             'valid_status' => ['required', 'in:0,1'],
         ]);
 
-        // Double-check status sebelum proses retur (antisipasi race condition)
         if ($request->valid_status == 1) {
             $gobog = Gobog::findOrFail($request->gobogs_id);
 
             if ($gobog->status === 'tersedia') {
-                return redirect()->route('admin.retur.index')
+                return redirect()->route('admin.rekap-pengembalian.index')
                     ->with('error', 'Retur gagal: Koin ini sudah berada di admin, tidak perlu diretur lagi.');
             }
         }
@@ -87,9 +85,9 @@ class ReturGobogController extends Controller
         }
 
         $pesan = $request->valid_status == 1
-            ? 'Retur berhasil diproses. Koin dikembalikan ke stok.'
+            ? 'Pengembalian berhasil diproses. Koin dikembalikan ke stok.'
             : 'Koin palsu dicatat.';
 
-        return redirect()->route('admin.retur.index')->with('success', $pesan);
+        return redirect()->route('admin.rekap-pengembalian.index')->with('success', $pesan);
     }
 }

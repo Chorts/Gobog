@@ -1,44 +1,40 @@
 ﻿@extends('layouts.app')
-@section('title', 'Tambah Koin Gobog')
+@section('title','Cetak Koin Gobog Baru')
 @section('content')
 <div class="d-flex align-items-center mb-4">
-    <a href="{{ route('admin.gobog.index') }}" class="btn btn-outline-secondary btn-sm me-3">
-        <i class="bi bi-arrow-left"></i>
-    </a>
-    <h2 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-primary"></i>Tambah Koin Gobog Baru</h2>
+    <a href="{{ route('admin.gobog.index') }}" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+    <h4 class="fw-bold mb-0">Cetak Koin Gobog Baru</h4>
 </div>
 <div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-6">
+    <div class="col-12 col-md-6 col-lg-5">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
+                <div class="alert alert-info d-flex gap-2 py-2 mb-4">
+                    <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
+                    <div>
+                        Harga koin saat ini: <strong>Rp {{ number_format($harga, 0, ',', '.') }}</strong><br>
+                        <small class="text-muted">Ubah harga di <a href="{{ route('admin.pengaturan.index') }}">Pengaturan</a>.</small>
+                    </div>
+                </div>
                 @if($errors->any())
-                    <div class="alert alert-danger">
-                        @foreach($errors->all() as $e)
-                            <div><i class="bi bi-exclamation-circle me-1"></i>{{ $e }}</div>
-                        @endforeach
+                    <div class="alert alert-danger py-2">
+                        @foreach($errors->all() as $e)<div><i class="bi bi-exclamation-circle me-1"></i>{{ $e }}</div>@endforeach
                     </div>
                 @endif
-                <form method="POST" action="{{ route('admin.gobog.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.gobog.store') }}">
                     @csrf
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nilai Nominal (Rp)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="number" name="nilai" class="form-control @error('nilai') is-invalid @enderror"
-                                   value="{{ old('nilai') }}" step="0.01" min="0" placeholder="Contoh: 5000" required>
-                        </div>
-                    </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Foto Fisik Koin <span class="text-muted fw-normal">(opsional)</span></label>
-                        <input type="file" name="foto" class="form-control @error('foto') is-invalid @enderror" accept="image/*">
+                        <label class="form-label fw-semibold">Jumlah Koin yang Dicetak</label>
+                        <div class="input-group">
+                            <input type="number" name="jumlah" class="form-control form-control-lg text-center @error('jumlah') is-invalid @enderror"
+                                   value="{{ old('jumlah', 1) }}" min="1" max="500" required placeholder="10">
+                            <span class="input-group-text">koin</span>
+                        </div>
+                        <div class="form-text">Maks. 500 koin sekali cetak.</div>
                     </div>
-                    <div class="alert alert-info d-flex align-items-center py-2">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <small>Kode unik, enkripsi AES-256-CBC, dan QR Code akan di-generate otomatis.</small>
-                    </div>
-                    <div class="d-grid gap-2 mt-3">
+                    <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary fw-semibold">
-                            <i class="bi bi-qr-code me-2"></i>Simpan &amp; Generate QR Code
+                            <i class="bi bi-qr-code me-2"></i>Cetak &amp; Generate QR Code
                         </button>
                         <a href="{{ route('admin.gobog.index') }}" class="btn btn-outline-secondary">Batal</a>
                     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gobog;
+use App\Models\Setting;
 use App\Services\GobogCipher;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -18,60 +19,66 @@ class GobogController extends Controller
 
     public function index(): View
     {
-        $gobogs = Gobog::latest()->paginate(20);
+        $gobogs = Gobog::withCount([
+            'penjualanTenans as terjual_count' => fn ($q) => $q->where('valid_status', 1),
+        ])->latest()->paginate(20);
 
         return view('admin.gobog.index', compact('gobogs'));
     }
 
     public function create(): View
     {
-        return view('admin.gobog.create');
+        $harga = Setting::get('harga_gobog', 0);
+
+        return view('admin.gobog.create', compact('harga'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'nilai' => ['required', 'numeric', 'min:0'],
-            'foto' => ['nullable', 'image', 'max:2048'],
+            'jumlah' => ['required', 'integer', 'min:1', 'max:500'],
         ]);
 
-        $kodeUnik = (string) Str::uuid();
-        $kodeEnkripsi = $this->cipher->encrypt($kodeUnik);
-
-        $qrResult = (new Builder(
-            writer: new SvgWriter,
-            data: $kodeEnkripsi,
-            encoding: new Encoding('UTF-8'),
-        ))->build();
-
+        $harga = (float) Setting::get('harga_gobog', 0);
         $qrDir = public_path('qrcodes');
+
         if (! file_exists($qrDir)) {
             mkdir($qrDir, 0755, true);
         }
 
-        $qrFilename = 'qr_'.$kodeUnik.'.svg';
-        $qrResult->saveToFile($qrDir.DIRECTORY_SEPARATOR.$qrFilename);
-        $qrPath = 'qrcodes/'.$qrFilename;
+        for ($i = 0; $i < $request->jumlah; $i++) {
+            $kodeUnik = (string) Str::uuid();
+            $kodeEnkripsi = $this->cipher->encrypt($kodeUnik);
 
-        $fotoPath = null;
-        if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('fotos', 'public');
+            $qrResult = (new Builder(
+                writer: new SvgWriter,
+                data: $kodeEnkripsi,
+                encoding: new Encoding('UTF-8'),
+            ))->build();
+
+            $qrFilename = 'qr_'.$kodeUnik.'.svg';
+            $qrResult->saveToFile($qrDir.DIRECTORY_SEPARATOR.$qrFilename);
+
+            Gobog::create([
+                'kode_unik' => $kodeUnik,
+                'nilai' => $harga,
+                'foto' => null,
+                'qr_code' => 'qrcodes/'.$qrFilename,
+                'kode_enkripsi' => $kodeEnkripsi,
+                'status' => 'tersedia',
+            ]);
         }
 
-        Gobog::create([
-            'kode_unik' => $kodeUnik,
-            'nilai' => $request->nilai,
-            'foto' => $fotoPath,
-            'qr_code' => $qrPath,
-            'kode_enkripsi' => $kodeEnkripsi,
-            'status' => 'tersedia',
-        ]);
-
-        return redirect()->route('admin.gobog.index')->with('success', 'Koin Gobog berhasil ditambahkan.');
+        return redirect()->route('admin.gobog.index')
+            ->with('success', $request->jumlah.' koin Gobog berhasil dicetak.');
     }
 
     public function show(Gobog $gobog): View
     {
+        $gobog->loadCount([
+            'penjualanTenans as terjual_count' => fn ($q) => $q->where('valid_status', 1),
+        ]);
+
         return view('admin.gobog.show', compact('gobog'));
     }
 
@@ -83,25 +90,28 @@ class GobogController extends Controller
     public function update(Request $request, Gobog $gobog): RedirectResponse
     {
         $request->validate([
-            'nilai' => ['required', 'numeric', 'min:0'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ]);
 
-        $data = ['nilai' => $request->nilai];
+        $data = [];
 
         if ($request->hasFile('foto')) {
             $data['foto'] = $request->file('foto')->store('fotos', 'public');
         }
 
-        $gobog->update($data);
+        if (! empty($data)) {
+            $gobog->update($data);
+        }
 
-        return redirect()->route('admin.gobog.index')->with('success', 'Koin Gobog berhasil diperbarui.');
+        return redirect()->route('admin.gobog.show', $gobog)
+            ->with('success', 'Foto koin berhasil diperbarui.');
     }
 
     public function destroy(Gobog $gobog): RedirectResponse
     {
         $gobog->delete();
 
-        return redirect()->route('admin.gobog.index')->with('success', 'Koin Gobog berhasil dihapus.');
+        return redirect()->route('admin.gobog.index')
+            ->with('success', 'Koin Gobog berhasil dihapus.');
     }
 }
