@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title','Laporan Penjualan')
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -8,7 +8,6 @@
     </a>
 </div>
 
-{{-- Filter --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body py-3">
         <form method="GET" action="{{ route('admin.laporan.index') }}" class="row g-2 align-items-end">
@@ -33,7 +32,6 @@
     </div>
 </div>
 
-{{-- Rekap Penjualan Admin --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-success text-white fw-semibold d-flex justify-content-between">
         <span><i class="bi bi-bag-check me-2"></i>Rekap Penjualan Gobog</span>
@@ -68,7 +66,6 @@
     </div>
 </div>
 
-{{-- Transaksi Tenan --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-primary text-white fw-semibold d-flex justify-content-between">
         <span><i class="bi bi-shop me-2"></i>Transaksi Tenan</span>
@@ -104,7 +101,6 @@
     </div>
 </div>
 
-{{-- Rekap Pengembalian --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-info text-white fw-semibold d-flex justify-content-between">
         <span><i class="bi bi-arrow-return-left me-2"></i>Rekap Pengembalian</span>
@@ -140,7 +136,6 @@
     </div>
 </div>
 
-{{-- Gobog Beredar (tidak tersedia) --}}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-warning fw-semibold d-flex justify-content-between">
         <span><i class="bi bi-people me-2"></i>Gobog Beredar di Masyarakat</span>

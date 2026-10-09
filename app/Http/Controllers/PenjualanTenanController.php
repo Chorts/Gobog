@@ -8,13 +8,12 @@ use App\Services\GobogCipher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PenjualanTenanController extends Controller
 {
     public function __construct(private GobogCipher $cipher) {}
-
-    // ── Cek Keaslian (hanya validasi, tidak dicatat) ─────────────────────────
 
     public function cekIndex(): View
     {
@@ -53,8 +52,6 @@ class PenjualanTenanController extends Controller
         ]);
     }
 
-    // ── Scan Penjualan (validasi + dicatat ke laporan) ────────────────────────
-
     public function index(): View
     {
         return view('penjual.scan-penjualan.index');
@@ -85,6 +82,7 @@ class PenjualanTenanController extends Controller
         if ($gobog->status === 'tersedia') {
             return response()->json([
                 'valid' => false,
+                'gobog_id' => $gobog->id,
                 'message' => 'GOBOG TIDAK VALID: Koin ini belum didistribusikan ke pengunjung.',
             ]);
         }
@@ -92,6 +90,7 @@ class PenjualanTenanController extends Controller
         return response()->json([
             'valid' => true,
             'gobog_id' => $gobog->id,
+            'kode_unik' => $gobog->kode_unik,
             'nilai' => $gobog->nilai,
             'status' => $gobog->status,
             'message' => 'GOBOG ASLI — Siap diterima sebagai pembayaran.',
@@ -100,6 +99,49 @@ class PenjualanTenanController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($request->has('gobog_ids')) {
+            $request->validate([
+                'gobog_ids' => ['required', 'array', 'min:1'],
+                'gobog_ids.*' => ['required', 'exists:gobogs,id'],
+            ]);
+
+            $ids = collect($request->gobog_ids)->unique();
+            $diterima = 0;
+            $dilewati = 0;
+
+            DB::transaction(function () use ($ids, &$diterima, &$dilewati) {
+                foreach ($ids as $id) {
+                    $gobog = Gobog::lockForUpdate()->find($id);
+
+                    if (! $gobog || $gobog->status === 'tersedia') {
+                        $dilewati++;
+
+                        continue;
+                    }
+
+                    PenjualanTenan::create([
+                        'users_id' => auth()->id(),
+                        'gobogs_id' => $gobog->id,
+                        'valid_status' => 1,
+                    ]);
+
+                    $diterima++;
+                }
+            });
+
+            if ($diterima === 0) {
+                return redirect()->route('penjual.scan-penjualan.index')
+                    ->with('error', 'Tidak ada koin yang valid untuk diterima sebagai pembayaran.');
+            }
+
+            $pesan = $diterima.' koin berhasil diterima. Transaksi belanja dicatat.';
+            if ($dilewati > 0) {
+                $pesan .= ' ('.$dilewati.' koin dilewati karena status belum beredar).';
+            }
+
+            return redirect()->route('penjual.scan-penjualan.index')->with('success', $pesan);
+        }
+
         $request->validate([
             'gobogs_id' => ['required', 'exists:gobogs,id'],
             'valid_status' => ['required', 'in:0,1'],

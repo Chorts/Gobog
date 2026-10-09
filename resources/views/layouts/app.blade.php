@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +10,6 @@
         :root { --sidebar-w: 240px; }
         body { background: #f0f2f5; min-height: 100vh; }
 
-        /* Sidebar */
         #sidebar {
             width: var(--sidebar-w);
             min-height: 100vh;
@@ -65,7 +64,6 @@
         #sidebar .user-info { color: rgba(255,255,255,.75); font-size: .8rem; }
         #sidebar .user-info .name { color: #fff; font-weight: 600; font-size: .875rem; }
 
-        /* Main */
         #main { margin-left: var(--sidebar-w); min-height: 100vh; }
         #topbar {
             background: #fff;
@@ -77,7 +75,6 @@
         }
         .page-content { padding: 24px; }
 
-        /* Mobile */
         @media (max-width: 991.98px) {
             #sidebar { transform: translateX(-100%); }
             #sidebar.show { transform: translateX(0); }
@@ -89,10 +86,9 @@
 </head>
 <body>
 
-<!-- Sidebar -->
 <div id="sidebar">
     <div class="sidebar-brand">
-        <h5><i class="bi bi-coin me-2 text-warning"></i>Gobog</h5>
+        <h5><i class="bi bi-coin me-2 text-warning"></i>Koin Gobog</h5>
         <small>Pasar Preng Sewu</small>
     </div>
 
@@ -112,11 +108,11 @@
                 <div class="nav-section mt-2">Transaksi</div>
                 <a href="{{ route('admin.rekap-penjualan.index') }}"
                    class="nav-link {{ request()->routeIs('admin.rekap-penjualan.*') ? 'active' : '' }}">
-                    <i class="bi bi-bag-check"></i> Rekap Penjualan
+                    <i class="bi bi-bag-check"></i> Penjualan Gobog
                 </a>
                 <a href="{{ route('admin.rekap-pengembalian.index') }}"
                    class="nav-link {{ request()->routeIs('admin.rekap-pengembalian.*') ? 'active' : '' }}">
-                    <i class="bi bi-arrow-return-left"></i> Rekap Pengembalian
+                    <i class="bi bi-arrow-return-left"></i> Pengembalian Gobog
                 </a>
                 <a href="{{ route('admin.laporan.index') }}"
                    class="nav-link {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
@@ -124,6 +120,10 @@
                 </a>
 
                 <div class="nav-section mt-2">Sistem</div>
+                <a href="{{ route('admin.users.index') }}"
+                   class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> Kelola Pengguna
+                </a>
                 <a href="{{ route('admin.pengaturan.index') }}"
                    class="nav-link {{ request()->routeIs('admin.pengaturan.*') ? 'active' : '' }}">
                     <i class="bi bi-gear"></i> Pengaturan
@@ -162,12 +162,9 @@
     </div>
 </div>
 
-<!-- Overlay (mobile) -->
 <div id="overlay" onclick="closeSidebar()"></div>
 
-<!-- Main -->
 <div id="main">
-    <!-- Topbar -->
     <div id="topbar" class="d-flex align-items-center">
         <button class="btn btn-sm btn-outline-secondary d-lg-none me-3" onclick="toggleSidebar()">
             <i class="bi bi-list fs-5"></i>
@@ -175,7 +172,6 @@
         <span class="fw-semibold text-muted small">@yield('title', 'Dashboard')</span>
     </div>
 
-    <!-- Content -->
     <div class="page-content">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">

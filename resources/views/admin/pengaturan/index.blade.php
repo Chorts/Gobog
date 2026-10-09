@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title','Pengaturan Sistem')
 @section('content')
 <h4 class="fw-bold mb-4"><i class="bi bi-gear me-2"></i>Pengaturan Sistem</h4>

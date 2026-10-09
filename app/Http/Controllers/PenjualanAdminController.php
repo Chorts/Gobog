@@ -9,6 +9,7 @@ use App\Services\GobogCipher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PenjualanAdminController extends Controller
@@ -22,7 +23,6 @@ class PenjualanAdminController extends Controller
         return view('admin.rekap-penjualan.index', compact('harga'));
     }
 
-    /** AJAX: validasi QR untuk nota penjualan */
     public function scan(Request $request): JsonResponse
     {
         $request->validate(['qr_data' => ['required', 'string']]);
@@ -61,7 +61,6 @@ class PenjualanAdminController extends Controller
         ]);
     }
 
-    /** Konfirmasi nota — simpan semua koin yang dipindai */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -70,23 +69,27 @@ class PenjualanAdminController extends Controller
         ]);
 
         $ids = collect($request->gobog_ids)->unique();
+        $terjual = 0;
 
-        foreach ($ids as $id) {
-            $gobog = Gobog::find($id);
+        DB::transaction(function () use ($ids, &$terjual) {
+            foreach ($ids as $id) {
+                $gobog = Gobog::lockForUpdate()->find($id);
 
-            if (! $gobog || $gobog->status !== 'tersedia') {
-                continue;
+                if (! $gobog || $gobog->status !== 'tersedia') {
+                    continue;
+                }
+
+                PenjualanAdmin::create([
+                    'users_id' => auth()->id(),
+                    'gobogs_id' => $gobog->id,
+                ]);
+
+                $gobog->update(['status' => 'tidak tersedia']);
+                $terjual++;
             }
-
-            PenjualanAdmin::create([
-                'users_id' => auth()->id(),
-                'gobogs_id' => $gobog->id,
-            ]);
-
-            $gobog->update(['status' => 'tidak tersedia']);
-        }
+        });
 
         return redirect()->route('admin.rekap-penjualan.index')
-            ->with('success', count($ids).' koin berhasil dijual / didistribusikan.');
+            ->with('success', $terjual.' koin berhasil dijual / didistribusikan.');
     }
 }

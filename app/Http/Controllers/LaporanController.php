@@ -8,7 +8,6 @@ use App\Models\PenjualanTenan;
 use App\Models\ReturnGobog;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -51,9 +50,6 @@ class LaporanController extends Controller
         return $pdf->download('laporan-gobog-'.now()->format('Ymd').'.pdf');
     }
 
-    /**
-     * @return array{0: Collection, 1: Collection, 2: Collection}
-     */
     private function queryData(Request $request): array
     {
         $filter = $request->input('filter', 'harian');

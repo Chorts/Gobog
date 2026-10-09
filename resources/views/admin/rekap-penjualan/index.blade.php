@@ -1,13 +1,12 @@
-﻿@extends('layouts.app')
-@section('title','Rekap Penjualan Gobog')
+@extends('layouts.app')
+@section('title','Penjualan Gobog')
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0"><i class="bi bi-bag-check me-2 text-success"></i>Rekap Penjualan Gobog</h4>
+    <h4 class="fw-bold mb-0"><i class="bi bi-bag-check me-2 text-success"></i>Penjualan Gobog</h4>
     <span class="badge bg-success">Harga: Rp {{ number_format($harga, 0, ',', '.') }}/koin</span>
 </div>
 
 <div class="row g-4">
-    <!-- Panel Scanner -->
     <div class="col-12 col-lg-5">
         <div class="card border-0 shadow-sm">
             <div class="card-header border-bottom bg-transparent fw-semibold">Scanner QR</div>
@@ -30,7 +29,6 @@
         </div>
     </div>
 
-    <!-- Panel Nota -->
     <div class="col-12 col-lg-7">
         <div class="card border-0 shadow-sm">
             <div class="card-header border-bottom bg-transparent d-flex justify-content-between align-items-center">
@@ -44,7 +42,7 @@
                 </div>
                 <table id="notaTable" class="table table-sm table-hover align-middle mb-0" style="display:none">
                     <thead class="table-light">
-                        <tr><th>#</th><th>Kode Koin</th><th>Nilai</th><th></th></tr>
+                        <tr><th>#</th><th>Kode Koin</th><th>Nilai</th></tr>
                     </thead>
                     <tbody id="notaBody"></tbody>
                 </table>
@@ -98,7 +96,6 @@ function stopScan() {
     document.getElementById('btnHapus').classList.remove('d-none');
     document.getElementById('btnStop').classList.add('d-none');
     document.getElementById('statusScan').textContent = '';
-    scanned = false;
 }
 
 function onScan(text) {
@@ -160,18 +157,11 @@ function renderNota() {
             <td class="text-muted small">${i+1}</td>
             <td><code class="small">${k.kode.substring(0,16)}…</code></td>
             <td>Rp ${Number(k.nilai).toLocaleString('id-ID')}</td>
-            <td><button type="button" class="btn btn-xs btn-outline-danger btn-sm py-0 px-1"
-                onclick="hapusDariNota(${k.id})"><i class="bi bi-x"></i></button></td>
         </tr>`;
         inputs.innerHTML += `<input type="hidden" name="gobog_ids[]" value="${k.id}">`;
     });
 
     badge.textContent = `${nota.length} koin \u2022 Rp ${total.toLocaleString('id-ID')}`;
-}
-
-function hapusDariNota(id) {
-    nota = nota.filter(k=>k.id!==id);
-    renderNota();
 }
 
 function clearNota() {

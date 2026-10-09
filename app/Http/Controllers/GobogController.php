@@ -109,6 +109,16 @@ class GobogController extends Controller
 
     public function destroy(Gobog $gobog): RedirectResponse
     {
+        if ($gobog->status === 'tidak tersedia') {
+            return redirect()->route('admin.gobog.index')
+                ->with('error', 'Koin tidak bisa dihapus: koin sedang beredar di masyarakat.');
+        }
+
+        if ($gobog->penjualanAdmins()->exists() || $gobog->penjualanTenans()->exists() || $gobog->returnGobogs()->exists()) {
+            return redirect()->route('admin.gobog.index')
+                ->with('error', 'Koin tidak bisa dihapus: sudah memiliki riwayat transaksi.');
+        }
+
         $gobog->delete();
 
         return redirect()->route('admin.gobog.index')

@@ -8,6 +8,7 @@ use App\Services\GobogCipher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReturGobogController extends Controller
@@ -61,32 +62,44 @@ class ReturGobogController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'gobogs_id' => ['required', 'exists:gobogs,id'],
-            'valid_status' => ['required', 'in:0,1'],
+            'gobog_ids' => ['required', 'array', 'min:1'],
+            'gobog_ids.*' => ['required', 'exists:gobogs,id'],
         ]);
 
-        if ($request->valid_status == 1) {
-            $gobog = Gobog::findOrFail($request->gobogs_id);
+        $ids = collect($request->gobog_ids)->unique();
+        $diproses = 0;
+        $dilewati = 0;
 
-            if ($gobog->status === 'tersedia') {
-                return redirect()->route('admin.rekap-pengembalian.index')
-                    ->with('error', 'Retur gagal: Koin ini sudah berada di admin, tidak perlu diretur lagi.');
+        DB::transaction(function () use ($ids, &$diproses, &$dilewati) {
+            foreach ($ids as $id) {
+                $gobog = Gobog::lockForUpdate()->find($id);
+
+                if (! $gobog || $gobog->status === 'tersedia') {
+                    $dilewati++;
+
+                    continue;
+                }
+
+                ReturnGobog::create([
+                    'users_id' => auth()->id(),
+                    'gobogs_id' => $gobog->id,
+                    'valid_status' => 1,
+                ]);
+
+                $gobog->update(['status' => 'tersedia']);
+                $diproses++;
             }
+        });
+
+        if ($diproses === 0) {
+            return redirect()->route('admin.rekap-pengembalian.index')
+                ->with('error', 'Tidak ada koin yang berhasil diproses untuk pengembalian.');
         }
 
-        ReturnGobog::create([
-            'users_id' => auth()->id(),
-            'gobogs_id' => $request->gobogs_id,
-            'valid_status' => $request->valid_status,
-        ]);
-
-        if ($request->valid_status == 1) {
-            Gobog::where('id', $request->gobogs_id)->update(['status' => 'tersedia']);
+        $pesan = $diproses.' koin berhasil dikembalikan ke kas admin.';
+        if ($dilewati > 0) {
+            $pesan .= ' ('.$dilewati.' koin dilewati karena sudah berstatus tersedia).';
         }
-
-        $pesan = $request->valid_status == 1
-            ? 'Pengembalian berhasil diproses. Koin dikembalikan ke stok.'
-            : 'Koin palsu dicatat.';
 
         return redirect()->route('admin.rekap-pengembalian.index')->with('success', $pesan);
     }

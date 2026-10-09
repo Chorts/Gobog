@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title','Edit Koin Gobog')
 @section('content')
 <div class="d-flex align-items-center mb-4">
